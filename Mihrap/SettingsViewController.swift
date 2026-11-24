@@ -199,7 +199,7 @@ final class LocationPickerViewController: UITableViewController, UISearchResults
             self.items = list.compactMap { e in
                 guard let id = e[idKey].map({ "\($0)" }) else { return nil }
                 let tr = e[trKey] as? String ?? "", en = e[enKey] as? String ?? ""
-                return (id, turkish || en.isEmpty ? LocationPickerViewController.title(tr) : LocationPickerViewController.title(en))
+                return (id, turkish || en.isEmpty ? LocationPickerViewController.title(tr, turkish: true) : LocationPickerViewController.title(en, turkish: false))
             }
             self.shown = self.items
             self.tableView.backgroundView = nil
@@ -214,9 +214,11 @@ final class LocationPickerViewController: UITableViewController, UISearchResults
         }
     }
 
-    /// The service sends upper-case names; show them in title case (Turkish rules for Turkish names).
-    private static func title(_ s: String) -> String {
-        s.lowercased(with: Locale(identifier: "tr")).capitalized(with: Locale(identifier: "tr"))
+    /// The service sends upper-case names; show them in title case. Turkish rules only for the
+    /// Turkish names (English "UNITED KINGDOM" must not become "Unıted Kıngdom").
+    static func title(_ s: String, turkish: Bool) -> String {
+        let locale = Locale(identifier: turkish ? "tr" : "en_US")
+        return s.lowercased(with: locale).capitalized(with: locale)
     }
 
     func updateSearchResults(for searchController: UISearchController) {

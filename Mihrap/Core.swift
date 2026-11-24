@@ -56,6 +56,15 @@ final class Settings {
     private let d = UserDefaults.standard
 
     private init() {
+        // 0.1.0 lower-cased English place names with Turkish rules ("Unıted Kıngdom"); repair them once.
+        if !d.bool(forKey: "fixedDotlessI") {
+            d.set(true, forKey: "fixedDotlessI")
+            if (d.string(forKey: "language") ?? "en") != "tr" {
+                for key in ["countryName", "cityName", "districtName"] {
+                    if let v = d.string(forKey: key) { d.set(v.replacingOccurrences(of: "ı", with: "i"), forKey: key) }
+                }
+            }
+        }
         if d.string(forKey: "language") == nil {
             let preferred = Locale.preferredLanguages.first.map { String($0.prefix(2)) } ?? "en"
             d.set(L10n.languages.contains(preferred) ? preferred : "en", forKey: "language")

@@ -2,7 +2,7 @@ import UIKit
 import UserNotifications
 
 /// MainActivity: the home screen with the clock, the adhan at prayer time and the action buttons.
-final class HomeViewController: UIViewController {
+final class HomeViewController: UIViewController, UIGestureRecognizerDelegate {
     private let photo = UIImageView()
     private let home = HomeView()
     private let actionRow = UIStackView()
@@ -54,6 +54,8 @@ final class HomeViewController: UIViewController {
         ])
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
+        tap.cancelsTouchesInView = false
+        tap.delegate = self
         view.addGestureRecognizer(tap)
 
         NotificationCenter.default.addObserver(self, selector: #selector(refresh), name: PrayerTimes.updated, object: nil)
@@ -165,6 +167,16 @@ final class HomeViewController: UIViewController {
     @objc private func toggleMenu() {
         actionRow.isHidden.toggle()
         menuToggle.setImage(UIImage(systemName: actionRow.isHidden ? "chevron.right" : "chevron.left"), for: .normal)
+    }
+
+    // Touches on the buttons belong to the buttons, not to the clock tap.
+    func gestureRecognizer(_ g: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        var v = touch.view
+        while let current = v, current !== view {
+            if current is UIControl { return false }
+            v = current.superview
+        }
+        return true
     }
 
     @objc private func tapped(_ g: UITapGestureRecognizer) {
