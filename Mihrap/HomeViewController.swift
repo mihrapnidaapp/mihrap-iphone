@@ -78,7 +78,9 @@ final class HomeViewController: UIViewController, UIGestureRecognizerDelegate {
     @objc private func becameActive() {
         if PrayerTimes.shared.needsFetch() { PrayerTimes.shared.fetch() }
         Media.shared.sync()
+        SaverAssets.shared.sync()
         Notifications.reschedule()
+        IdleWindow.lastActivity = Date()
         tick()
     }
 
@@ -121,6 +123,17 @@ final class HomeViewController: UIViewController, UIGestureRecognizerDelegate {
         else if s.row == nil && pt.failed { home.message = L10n.s("times_fetch_failed") }
         else { home.message = nil }
         checkAdhan(now, s.row)
+        maybeStartSaver()
+    }
+
+    /// MainActivity: after the idle time on the home screen the screensaver starts.
+    private func maybeStartSaver() {
+        let idle = Settings.shared.idleSeconds
+        guard idle > 0, presentedViewController == nil, !AdhanPlayer.shared.isPlaying,
+              UIApplication.shared.applicationState == .active,
+              Date().timeIntervalSince(IdleWindow.lastActivity) > TimeInterval(idle),
+              !SaverAssets.shared.availableIds().isEmpty else { return }
+        present(SaverViewController(), animated: true)
     }
 
     // checkPrayerAdhan: from 2 s before to 5 s after the minute, once per prayer and day; never at sunrise.

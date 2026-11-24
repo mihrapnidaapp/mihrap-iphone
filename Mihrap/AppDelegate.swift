@@ -12,7 +12,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
         // The adhan plays like media: also with the ring/silent switch on silent.
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         UNUserNotificationCenter.current().delegate = self
-        let window = UIWindow(frame: UIScreen.main.bounds)
+        let window = IdleWindow(frame: UIScreen.main.bounds)
         window.backgroundColor = .mihrapNavy
         window.rootViewController = HomeViewController()
         window.makeKeyAndVisible()

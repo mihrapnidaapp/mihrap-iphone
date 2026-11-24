@@ -84,6 +84,14 @@ final class Settings {
     var dua: Bool { get { d.object(forKey: "dua") as? Bool ?? true } set { d.set(newValue, forKey: "dua") } }
     /// Silent notifications at the prayer times while the app is closed.
     var notifications: Bool { get { d.object(forKey: "notifications") as? Bool ?? true } set { d.set(newValue, forKey: "notifications") } }
+    /// Screensaver after this many idle seconds on the home screen; 0 = off (Prefs.getHomeIdleSeconds, default 30).
+    var idleSeconds: Int { get { d.object(forKey: "idleSeconds") as? Int ?? 30 } set { d.set(newValue, forKey: "idleSeconds") } }
+    /// Seconds per screensaver slide (default 20).
+    var slideSeconds: Int { get { d.object(forKey: "slideSeconds") as? Int ?? 20 } set { d.set(newValue, forKey: "slideSeconds") } }
+    /// Extra screensaver languages besides the menu language.
+    var saverLanguages: [String] { get { d.stringArray(forKey: "saverLanguages") ?? [] } set { d.set(newValue, forKey: "saverLanguages") } }
+    /// Show Mihrap's own translations of texts with no published translation (default on).
+    var mihrapTranslations: Bool { get { d.object(forKey: "mihrapTranslations") as? Bool ?? true } set { d.set(newValue, forKey: "mihrapTranslations") } }
     /// Home theme preset index (ThemePresets.ALL).
     var theme: Int { get { d.integer(forKey: "theme") } set { d.set(newValue, forKey: "theme") } }
 

@@ -58,6 +58,16 @@ def strings() -> None:
         print(lang, len(table), "strings")
 
 
+def texts() -> None:
+    """Screensaver texts (347 quotations + 99 Names, 10 languages): the same slim files the web version uses,
+    built from the published shared screensaver package."""
+    src = HERE.parent / "mihrap-web" / "site" / "mihrap" / "data" / "texts"
+    target = OUT / "texts"
+    target.mkdir(parents=True, exist_ok=True)
+    for path in src.glob("*.json"):
+        shutil.copyfile(path, target / path.name)
+
+
 def fonts() -> None:
     target = OUT / "fonts"
     target.mkdir(parents=True, exist_ok=True)
@@ -100,6 +110,7 @@ def icon() -> None:
 
 if __name__ == "__main__":
     strings()
+    texts()
     fonts()
     photos()
     icon()

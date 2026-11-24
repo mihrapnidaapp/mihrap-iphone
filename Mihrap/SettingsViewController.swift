@@ -17,6 +17,10 @@ enum IOSText {
                                "应用关闭时 iPhone 无法播放宣礼；礼拜时间会显示一条静音通知。应用打开时宣礼完整播放。",
                                "ایپ بند ہو تو iPhone اذان نہیں چلا سکتا؛ نماز کے وقت ایک خاموش اطلاع آتی ہے۔ ایپ کھلی ہو تو اذان پوری چلتی ہے۔",
                                "ऐप बंद होने पर iPhone अज़ान नहीं चला सकता; नमाज़ के समय एक मौन सूचना आती है। ऐप खुला हो तो अज़ान पूरी चलती है।"],
+        "screensaver": ["Ekran koruyucu", "Screensaver", "Bildschirmschoner", "شاشة التوقف", "محافظ صفحه", "Screensaver", "Penyelamat skrin", "屏幕保护", "اسکرین سیور", "स्क्रीनसेवर"],
+        "saver_after": ["Ekran koruyucu süresi", "Screensaver after", "Bildschirmschoner nach", "شاشة التوقف بعد", "محافظ صفحه پس از", "Screensaver setelah", "Penyelamat skrin selepas", "屏保启动时间", "اسکرین سیور کے بعد", "स्क्रीनसेवर इसके बाद"],
+        "sec": ["sn", "s", "s", "ث", "ث", "dtk", "saat", "秒", "سیکنڈ", "से."],
+        "min": ["dk", "min", "Min.", "د", "دقیقه", "mnt", "minit", "分钟", "منٹ", "मिनट"],
         "downloading": ["Ezan sesleri ve fotoğraflar indiriliyor…", "Downloading adhan recordings and photos…", "Adhan-Aufnahmen und Fotos werden geladen…",
                         "جارٍ تنزيل تسجيلات الأذان والصور…", "در حال دریافت صداهای اذان و عکس‌ها…", "Mengunduh rekaman azan dan foto…",
                         "Memuat turun rakaman azan dan foto…", "正在下载宣礼录音和照片…", "اذان کی ریکارڈنگز اور تصاویر ڈاؤن لوڈ ہو رہی ہیں…", "अज़ान रिकॉर्डिंग और फ़ोटो डाउनलोड हो रहे हैं…"],
@@ -29,7 +33,7 @@ enum IOSText {
 
 /// SettingsActivity: location, adhan and display settings. Changes apply when the sheet closes.
 final class SettingsViewController: UITableViewController {
-    private enum Row { case country, city, district, times, azan, dua, notifications, language, theme }
+    private enum Row { case country, city, district, times, azan, dua, notifications, language, theme, idle, slide, saverLangs, mihrapTr }
     private var sections: [(title: String, footer: String?, rows: [Row])] = []
 
     init() { super.init(style: .insetGrouped) }
@@ -39,6 +43,7 @@ final class SettingsViewController: UITableViewController {
         super.viewDidLoad()
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
         NotificationCenter.default.addObserver(self, selector: #selector(reload), name: Media.changed, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(reload), name: SaverAssets.changed, object: nil)
         reload()
     }
 
@@ -55,6 +60,7 @@ final class SettingsViewController: UITableViewController {
             (L10n.s("settings_tab_worship"), Media.shared.busy ? IOSText.s("downloading") : IOSText.s("notifications_hint"),
              [.azan, .dua, .notifications]),
             (L10n.s("settings_tab_display"), nil, [.language, .theme]),
+            (IOSText.s("screensaver"), saverStatus(), [.idle, .slide, .saverLangs, .mihrapTr]),
         ]
         tableView.semanticContentAttribute = L10n.rtl.contains(Settings.shared.language) ? .forceRightToLeft : .forceLeftToRight
         tableView.reloadData()
@@ -70,6 +76,14 @@ final class SettingsViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? { sections[section].title }
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? { sections[section].footer }
 
+    private func saverStatus() -> String {
+        let n = SaverAssets.shared.downloadedCount
+        return n > 0 ? L10n.format("screensaver_ready", n) : L10n.s("screensaver_waiting")
+    }
+    private static let idleChoices = [0, 15, 30, 60, 120, 300, 600]
+    private static let slideChoices = [10, 15, 20, 30, 45, 60]
+    private func secondsName(_ v: Int) -> String { v == 0 ? IOSText.s("off") : (v < 60 ? "\(v) \(IOSText.s("sec"))" :"\(v / 60) \(IOSText.s("min"))") }
+
     private func azanName(_ code: String) -> String { code == "off" ? IOSText.s("off") : L10n.s("azan_" + code) }
     private static let themes = ["theme_medina", "theme_kaaba", "theme_green_dome"]
 
@@ -83,18 +97,27 @@ final class SettingsViewController: UITableViewController {
         case .district: cell.textLabel?.text = L10n.s("district"); cell.detailTextLabel?.text = s.districtName
         case .times: cell.textLabel?.text = L10n.s("times_list")
         case .azan: cell.textLabel?.text = L10n.s("azan_type_section"); cell.detailTextLabel?.text = azanName(s.azan)
-        case .dua, .notifications:
-            let isDua = sections[indexPath.section].rows[indexPath.row] == .dua
-            cell.textLabel?.text = isDua ? L10n.s("dua_after_adhan") : IOSText.s("notifications")
+        case .dua, .notifications, .mihrapTr:
+            let row = sections[indexPath.section].rows[indexPath.row]
+            cell.textLabel?.text = row == .dua ? L10n.s("dua_after_adhan") : row == .notifications ? IOSText.s("notifications") : L10n.s("show_mihrap_translations")
             cell.textLabel?.numberOfLines = 0
             let toggle = UISwitch()
-            toggle.isOn = isDua ? s.dua : s.notifications
+            toggle.isOn = row == .dua ? s.dua : row == .notifications ? s.notifications : s.mihrapTranslations
             toggle.addAction(UIAction { _ in
-                if isDua { Settings.shared.dua = toggle.isOn } else { Settings.shared.notifications = toggle.isOn }
+                switch row {
+                case .dua: Settings.shared.dua = toggle.isOn
+                case .notifications: Settings.shared.notifications = toggle.isOn
+                default: Settings.shared.mihrapTranslations = toggle.isOn
+                }
             }, for: .valueChanged)
             cell.accessoryView = toggle
             cell.selectionStyle = .none
         case .language: cell.textLabel?.text = L10n.s("language"); cell.detailTextLabel?.text = L10n.names[s.language]
+        case .idle: cell.textLabel?.text = IOSText.s("saver_after"); cell.detailTextLabel?.text = secondsName(s.idleSeconds)
+        case .slide: cell.textLabel?.text = L10n.s("slide_seconds"); cell.detailTextLabel?.text = secondsName(s.slideSeconds)
+        case .saverLangs:
+            cell.textLabel?.text = L10n.s("screensaver_languages")
+            cell.detailTextLabel?.text = SaverAssets.shared.languages().map { $0.uppercased() }.joined(separator: ", ")
         case .theme:
             cell.textLabel?.text = L10n.s("theme_section")
             cell.detailTextLabel?.text = L10n.s(SettingsViewController.themes[s.theme % 3])
@@ -124,7 +147,17 @@ final class SettingsViewController: UITableViewController {
         case .theme:
             push(ChoiceViewController(title: L10n.s("theme_section"), options: SettingsViewController.themes.map { L10n.s($0) },
                                       selected: s.theme % 3) { Settings.shared.theme = $0 })
-        case .dua, .notifications:
+        case .idle:
+            let c = SettingsViewController.idleChoices
+            push(ChoiceViewController(title: IOSText.s("saver_after"), options: c.map { secondsName($0) },
+                                      selected: c.firstIndex(of: s.idleSeconds) ?? 2) { Settings.shared.idleSeconds = c[$0] })
+        case .slide:
+            let c = SettingsViewController.slideChoices
+            push(ChoiceViewController(title: L10n.s("slide_seconds"), options: c.map { secondsName($0) },
+                                      selected: c.firstIndex(of: s.slideSeconds) ?? 2) { Settings.shared.slideSeconds = c[$0] })
+        case .saverLangs:
+            push(SaverLanguagesViewController())
+        case .dua, .notifications, .mihrapTr:
             break
         }
     }
@@ -359,5 +392,35 @@ final class TimesRow: UIStackView {
                 l.widthAnchor.constraint(equalTo: f.widthAnchor, multiplier: 0.72).isActive = true
             }
         }
+    }
+}
+
+/// SettingsActivity: screensaver languages; the menu language is always included.
+final class SaverLanguagesViewController: UITableViewController {
+    init() {
+        super.init(style: .insetGrouped)
+        title = L10n.s("screensaver_languages")
+    }
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? { L10n.s("screensaver_languages_desc") }
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { L10n.languages.count }
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let code = L10n.languages[indexPath.row]
+        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        cell.textLabel?.text = L10n.names[code]
+        let menu = code == Settings.shared.language
+        cell.accessoryType = menu || Settings.shared.saverLanguages.contains(code) ? .checkmark : .none
+        cell.textLabel?.textColor = menu ? .secondaryLabel : .label
+        return cell
+    }
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let code = L10n.languages[indexPath.row]
+        if code == Settings.shared.language { return }
+        var list = Settings.shared.saverLanguages
+        if let i = list.firstIndex(of: code) { list.remove(at: i) } else { list.append(code) }
+        Settings.shared.saverLanguages = list
+        tableView.reloadRows(at: [indexPath], with: .none)
     }
 }
