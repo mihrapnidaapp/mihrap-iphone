@@ -31,11 +31,12 @@ struct HomeState {
     init(_ now: Date) {
         let pt = PrayerTimes.shared
         self.now = now
-        row = pt.row(for: now)
+        let today = pt.row(for: now)
+        row = today
         next = pt.next(after: now)
-        let active = pt.activeKey(row, now)
+        let active = pt.activeKey(today, now)
         names = PrayerTimes.keys.map { prayerName($0, now) }
-        times = PrayerTimes.keys.map { row?.times[$0] ?? "--:--" }
+        times = PrayerTimes.keys.map { today?.times[$0] ?? "--:--" }
         activeIndex = PrayerTimes.keys.firstIndex(of: active) ?? -1
         if let n = next {
             let friday = Calendar.current.component(.weekday, from: now) == 6
@@ -45,8 +46,8 @@ struct HomeState {
             nextName = ""; nextLeft = ""
         }
         nextSuffix = L10n.s("time_left_suffix")
-        sunrise = L10n.format("dash_sunrise", row?.times["Gunes"] ?? "--:--")
-        sunset = L10n.format("dash_sunset", row?.times["Aksam"] ?? "--:--")
+        sunrise = L10n.format("dash_sunrise", today?.times["Gunes"] ?? "--:--")
+        sunset = L10n.format("dash_sunset", today?.times["Aksam"] ?? "--:--")
     }
 }
 

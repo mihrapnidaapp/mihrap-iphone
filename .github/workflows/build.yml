@@ -18,10 +18,16 @@ jobs:
 
       - name: Build (unsigned; Sideloadly signs it)
         run: |
-          xcodebuild -project Mihrap.xcodeproj -target Mihrap -configuration Release -sdk iphoneos \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
-            SYMROOT="$PWD/build" build | tail -40
-          test -d build/Release-iphoneos/Mihrap.app
+          set -o pipefail
+          if ! xcodebuild -project Mihrap.xcodeproj -target Mihrap -configuration Release -sdk iphoneos \
+              CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+              SYMROOT="$PWD/build" build > build.log 2>&1; then
+            grep -E "error:|BUILD FAILED" build.log | sort -u
+            exit 1
+          fi
+          grep -E "warning:" build.log | grep "/Mihrap/" | sort -u || true
+          test -f build/Release-iphoneos/Mihrap.app/Mihrap
+          test -f build/Release-iphoneos/Mihrap.app/Info.plist
 
       - name: Package IPA
         run: |
