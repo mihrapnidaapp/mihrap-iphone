@@ -1,0 +1,38 @@
+name: Build unsigned IPA (native app)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build (unsigned; Sideloadly signs it)
+        run: |
+          xcodebuild -project Mihrap.xcodeproj -target Mihrap -configuration Release -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            SYMROOT="$PWD/build" build | tail -40
+          test -d build/Release-iphoneos/Mihrap.app
+
+      - name: Package IPA
+        run: |
+          mkdir Payload
+          cp -R build/Release-iphoneos/Mihrap.app Payload/
+          zip -qry Mihrap.ipa Payload
+          ls -l Mihrap.ipa
+          shasum -a 256 Mihrap.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mihrap-ipa
+          path: Mihrap.ipa
+          retention-days: 30
