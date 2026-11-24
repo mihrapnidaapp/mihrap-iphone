@@ -9,6 +9,7 @@ final class HomeViewController: UIViewController, UIGestureRecognizerDelegate {
     private let menuToggle = UIButton(type: .system)
     private var adhanButton: ActionButton!
     private var settingsButton: ActionButton!
+    private var qiblaButton: ActionButton!
     private var timer: Timer?
     private var lastPhoto = -1
     private var played = Set<String>()
@@ -30,11 +31,12 @@ final class HomeViewController: UIViewController, UIGestureRecognizerDelegate {
 
         adhanButton = ActionButton(symbol: "speaker.wave.2.fill") { [weak self] in self?.toggleAdhan() }
         settingsButton = ActionButton(symbol: "gearshape.fill") { [weak self] in self?.openSettings() }
+        qiblaButton = ActionButton(symbol: "location.north.circle.fill") { [weak self] in self?.openQibla() }
         actionRow.axis = .horizontal
         actionRow.spacing = 12
         actionRow.isHidden = true
         actionRow.translatesAutoresizingMaskIntoConstraints = false
-        for b in [adhanButton!, settingsButton!] { actionRow.addArrangedSubview(b) }
+        for b in [adhanButton!, qiblaButton!, settingsButton!] { actionRow.addArrangedSubview(b) }
         view.addSubview(actionRow)
         menuToggle.setImage(UIImage(systemName: "chevron.right"), for: .normal)
         menuToggle.tintColor = UIColor(hex: "#F0D78A")
@@ -98,6 +100,7 @@ final class HomeViewController: UIViewController, UIGestureRecognizerDelegate {
         UIView.appearance().semanticContentAttribute = rtl ? .forceRightToLeft : .forceLeftToRight
         adhanButton.label = L10n.s("ezan_oku")
         settingsButton.label = L10n.s("settings")
+        qiblaButton.label = IOSText.s("qibla")
     }
 
     @objc private func refresh() {
@@ -197,6 +200,14 @@ final class HomeViewController: UIViewController, UIGestureRecognizerDelegate {
         if home.clockRect.insetBy(dx: -12, dy: -12).contains(g.location(in: home)) {
             present(UINavigationController(rootViewController: TimesListViewController()), animated: true)
         }
+    }
+
+    private func openQibla() {
+        let nav = UINavigationController(rootViewController: QiblaViewController())
+        nav.modalPresentationStyle = .fullScreen
+        nav.navigationBar.barStyle = .black
+        nav.navigationBar.tintColor = UIColor(hex: "#F0D78A")
+        present(nav, animated: true)
     }
 
     private func openSettings() {

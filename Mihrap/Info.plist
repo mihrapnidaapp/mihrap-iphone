@@ -51,6 +51,6 @@
 		<string>audio</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Mihrap uses your location only to calculate prayer times.</string>
+	<string>Mihrap uses your location only to find the qibla direction.</string>
 </dict>
 </plist>
