@@ -220,7 +220,7 @@ final class QiblaViewController: UIViewController, CLLocationManagerDelegate {
             stack.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 36),
             stack.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -36),
             hintLabel.topAnchor.constraint(greaterThanOrEqualTo: stack.bottomAnchor, constant: 10),
-            hintLabel.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -46),
+            hintLabel.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -72),
             hintLabel.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 40),
             hintLabel.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -40),
         ])
@@ -413,16 +413,21 @@ final class MihrabArchView: UIView {
         let left = i, right = bounds.width - i, w = right - left, mid = bounds.midX
         let apex = i * 1.4
         let spring = apex + w * 0.58
+        let base = archBottom - i * 0.6
         let p = UIBezierPath()
-        p.move(to: CGPoint(x: left, y: bounds.height + 2))
+        p.move(to: CGPoint(x: left, y: base))
         p.addLine(to: CGPoint(x: left, y: spring))
         p.addCurve(to: CGPoint(x: mid, y: apex), controlPoint1: CGPoint(x: left, y: spring - w * 0.29),
                    controlPoint2: CGPoint(x: left + w * 0.263, y: apex + w * 0.115))
         p.addCurve(to: CGPoint(x: right, y: spring), controlPoint1: CGPoint(x: right - w * 0.263, y: apex + w * 0.115),
                    controlPoint2: CGPoint(x: right, y: spring - w * 0.29))
-        p.addLine(to: CGPoint(x: right, y: bounds.height + 2))
+        p.addLine(to: CGPoint(x: right, y: base))
+        p.close()
         return p
     }
+
+    /// The arch closes above the bottom of the view; the fringe hangs below it.
+    private var archBottom: CGFloat { bounds.height - 18 }
 
     override func draw(_ rect: CGRect) {
         let outer = archPath(inset: 2)
@@ -436,7 +441,7 @@ final class MihrabArchView: UIView {
         line.withAlphaComponent(0.35).setStroke()
         inner.stroke()
         // Rug border: two lines with a row of small eight-pointed stars between them.
-        let top = bounds.height - 34, bottom = bounds.height - 10, left: CGFloat = 18, right = bounds.width - 18
+        let top = archBottom - 46, bottom = archBottom - 20, left: CGFloat = 18, right = bounds.width - 18
         line.withAlphaComponent(0.35).setStroke()
         for y in [top, bottom] {
             let l = UIBezierPath()
@@ -444,6 +449,17 @@ final class MihrabArchView: UIView {
             l.addLine(to: CGPoint(x: right, y: y))
             l.lineWidth = 1
             l.stroke()
+        }
+        // Fringe below the arch, like the end of a prayer rug.
+        line.withAlphaComponent(0.5).setStroke()
+        var x: CGFloat = 8
+        while x <= bounds.width - 8 {
+            let f = UIBezierPath()
+            f.move(to: CGPoint(x: x, y: archBottom))
+            f.addLine(to: CGPoint(x: x, y: archBottom + 12))
+            f.lineWidth = 1
+            f.stroke()
+            x += 7
         }
         let cy = (top + bottom) / 2, k: CGFloat = 5.5, step: CGFloat = 26
         let count = Int((right - left) / step)
